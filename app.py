@@ -1,22 +1,127 @@
-from flask import Flask
-from flask_restful import Api
-from models import db
-import config
-from ressources import TaskList
-
-# Create the Flask application and the Flask-RESTful API manager.
+from flask import Flask, request, jsonify
+import requests
+from config import API_KEYS
 app = Flask(__name__)
-app.config.from_object(config)
-# Initialize the Flask-SQLAlchemy object.
-db.init_app(app)
-# Create the Flask-RESTful API manager.
-api = Api(app)
-# Create the endpoints.
-api.add_resource(TaskList, '/tasks')
+villes = ["Paris", "New York", "Tokyo", "London"]
+
+# Route pour récupérer les données météorologiques par ville
+@app.route('/weather/city', methods=['GET'])
+
+def get_all_weather():
+    # Votre clé d'API WeatherAPI
+    # api_key = 'bc51670c71df489d91374131241605'
+    
+    # Dictionnaire pour stocker les données météorologiques de toutes les villes
+    all_weather_data = {}
+    
+    # Parcourir la liste de villes et récupérer les données météorologiques pour chaque ville
+    for city in villes:
+        # URL de l'API WeatherAPI pour obtenir les données météorologiques de la ville actuelle
+        url = f'http://api.weatherapi.com/v1/current.json?key={API_KEYS}&q={city}'
+        
+        # Envoyer une requête GET à l'API WeatherAPI
+        response = requests.get(url)
+        
+        # Vérifier si la requête a réussi
+        if response.status_code == 200:
+            # Convertir la réponse JSON en dictionnaire Python
+            data = response.json()
+            
+            # Extraire les informations météorologiques pertinentes
+            weather_data = {
+                'city': data['location']['name'],
+                'temperature': data['current']['temp_c'],
+                'condition': data['current']['condition']['text'],
+                'région' : data['location']['region']
+                # Ajoutez d'autres données météorologiques pertinentes si nécessaire
+            }
+            
+            # Ajouter les données météorologiques de la ville au dictionnaire global
+            all_weather_data[city] = weather_data
+    
+    # Retourner toutes les données météorologiques au format JSON
+    return jsonify(all_weather_data)
+
+
+
+# Route pour la lcoalisation de l'utilisateur et renvoie la météo
+@app.route('/weather/userlocation' ,methods=['GET'] )
+
+def get_current_location_weather():
+    # Obtenez les coordonnées de localisation de l'utilisateur à partir de la requête
+    latitude = request.args.get('latitude')
+    longitude = request.args.get('longitude')
+
+    print(longitude,latitude)
+
+    # Votre clé d'API WeatherAPI
+   
+    
+    # URL de l'API WeatherAPI pour obtenir les données météorologiques actuelles en fonction des coordonnées
+    url = f'http://api.weatherapi.com/v1/current.json?key={API_KEYS}&q={latitude},{longitude}'
+    
+    # Envoyer une requête GET à l'API WeatherAPI
+    response = requests.get(url)
+    
+    # Vérifier si la requête a réussi
+    if response.status_code == 200:
+        # Convertir la réponse JSON en dictionnaire Python
+        data = response.json()
+        
+        # Extraire les informations météorologiques pertinentes
+        current_location_weather_data = {
+            'city': data['location']['name'],
+            'temperature': data['current']['temp_c'],
+            'condition': data['current']['condition']['text'],
+            'région' : data['location']['region']
+            # Ajoutez d'autres données météorologiques pertinentes si nécessaire
+        }
+        
+        return jsonify(current_location_weather_data)
+    else:
+        # En cas d'échec de la requête, renvoyer un message d'erreur
+        return jsonify({'error': 'Failed to fetch weather data'}), 500
+
+
+
+
+# R oute pour les historiques 
+@app.route('/weather/historical', methods=['GET'])
+def get_historical_weather():
+    # Obtenez le nom de la ville spécifiée à partir de la requête
+    city = request.args.get('city')
+
+    # Votre clé d'API WeatherAPI
+    
+    # Date de début et de fin pour la période historique (par exemple, les 7 derniers jours)
+    import datetime
+    end_date = datetime.date.today()
+    start_date = end_date - datetime.timedelta(days=7)  # Obtenez les données des 7 derniers jours
+    
+    # URL de l'API WeatherAPI pour obtenir les données météorologiques historiques pour une ville spécifiée
+    url = f'http://api.weatherapi.com/v1/history.json?key={API_KEYS}&q={city}&dt={start_date}&end_dt={end_date}'
+    
+    # Envoyer une requête GET à l'API WeatherAPI
+    response = requests.get(url)
+    
+    # Vérifier si la requête a réussi
+    if response.status_code == 200:
+        # Convertir la réponse JSON en dictionnaire Python
+        data = response.json()
+        
+        # Extraire les informations météorologiques pertinentes
+        historical_weather_data = {
+            'city': data['location']['name'],
+            'historical_data': data['forecast']['forecastday']  # Les données historiques pour chaque jour
+            # Ajoutez d'autres données météorologiques pertinentes si nécessaire
+        }
+        
+        return jsonify(historical_weather_data)
+    else:
+        # En cas d'échec de la requête, renvoyer un message d'erreur
+        return jsonify({'error': 'Failed to fetch historical weather data'}), 500
+
+
 
 if __name__ == '__main__':
-    # Create the database tables.
-    with app.app_context():
-        db.create_all()
-    # Start the Flask development web server.
     app.run(debug=True)
