@@ -131,8 +131,13 @@ def get_historical_weather():
         
         # Extraire les informations météorologiques pertinentes
         historical_weather_data = {
-            'city': data['location']['name'],
-            'historical_data': data['forecast']['forecastday']  # Les données historiques pour chaque jour
+        
+        'date': data['forecast']['forecastday'][0]['date'],
+        'avgtemp_c': data['forecast']['forecastday'][0]['day']['avgtemp_c'],
+        'maxtemp_c': data['forecast']['forecastday'][0]['day']['maxtemp_c'],
+        'mintemp_c': data['forecast']['forecastday'][0]['day']['mintemp_c'],
+        'humidity': data['forecast']['forecastday'][0]['day']['avghumidity'],
+        'precip_mm': data['forecast']['forecastday'][0]['day']['totalprecip_mm']
             # Ajoutez d'autres données météorologiques pertinentes si nécessaire
         }
         
@@ -168,3 +173,4 @@ def send_email():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
