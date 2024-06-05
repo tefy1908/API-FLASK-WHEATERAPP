@@ -1,8 +1,28 @@
 from flask import Flask, request, jsonify
 import requests
 from config import API_KEYS
+from flask_cors import CORS
+from flask_mail import Mail
+from flask_mail import Message
+import logging
+
+
+
 app = Flask(__name__)
-villes = ["Paris", "New York", "Tokyo", "London"]
+CORS(app)
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = 'tefymaherison19@gmail.com'
+app.config['MAIL_PASSWORD'] = 'hxwf kpua wjfx pwdh'
+
+mail = Mail(app)
+
+cities = ["Paris", "New York", "Tokyo", "London","Lyon","Beijing", "Moscow", "Sydney", "Toronto", "Dubai", 
+    "Berlin", "Rome", "Istanbul", "Madrid", "Buenos Aires",
+    "Mumbai", "Cairo", "Bangkok", "Mexico City", "Seoul",
+    "Lagos", "Jakarta", "São Paulo", "Los Angeles", "Chicago",
+    "Hong Kong", "Kuala Lumpur", "Lima", "Shanghai", "Cape Town"]
 
 # Route pour récupérer les données météorologiques par ville
 @app.route('/weather/city', methods=['GET'])
@@ -11,14 +31,14 @@ def get_all_weather():
     # Votre clé d'API WeatherAPI
     # api_key = 'bc51670c71df489d91374131241605'
     
-    # Dictionnaire pour stocker les données météorologiques de toutes les villes
+    # Dictionnaire pour stocker les données météorologiques de toutes les cities
     all_weather_data = {}
     
-    # Parcourir la liste de villes et récupérer les données météorologiques pour chaque ville
-    for city in villes:
+    # Parcourir la liste de cities et récupérer les données météorologiques pour chaque ville
+    for city in cities:
         # URL de l'API WeatherAPI pour obtenir les données météorologiques de la ville actuelle
         url = f'http://api.weatherapi.com/v1/current.json?key={API_KEYS}&q={city}'
-        
+          
         # Envoyer une requête GET à l'API WeatherAPI
         response = requests.get(url)
         
@@ -122,6 +142,29 @@ def get_historical_weather():
         return jsonify({'error': 'Failed to fetch historical weather data'}), 500
 
 
+
+#Route pour envoyer les emails 
+@app.route('/sendmail', methods=['POST'])
+def send_email():
+    data = request.json
+    name = data.get('name')
+    email = data.get('email')
+    message_content = data.get('message')
+
+    msg = Message(
+        subject="Bug Report",
+        sender=email,
+        recipients=["tefymaherison19@gmail.com"],  # Remplacez par l'email du développeur
+        body=f"Nom: {name}\nEmail: {email}\n\nMessage:\n{message_content}"
+    )
+    msg.add_recipient(email)
+
+    try:
+        mail.send(msg)
+        return jsonify({"message": "Email sent successfully!"}), 200
+    except Exception as e:
+        logging.error("Error sending email", exc_info=True)
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
