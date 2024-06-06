@@ -41,15 +41,21 @@ weather_data['date'] = pd.to_datetime(weather_data['date'])
 weather_data.set_index('date', inplace=True)
 
 
-weather_data = weather_data.dropna()
+# weather_data = weather_data.dropna()
 # # Sélection des caractéristiques et de la cible
-features = weather_data['maxtemp_c', 'mintemp_c', 'avgtemp_c', 'maxwind_kph', 'totalprecip_mm', 'avgvis_km', 'avghumidity']
-target = weather_data['maxtemp_c']
+# print(weather_data)
+features = weather_data[['maxtemp_c', 'mintemp_c', 'avgtemp_c', 'maxwind_kph', 'totalprecip_mm', 'avgvis_km', 'avghumidity']]
 
+features=features.dropna()
+print(features)
+
+target = weather_data['maxtemp_c']
+target=target.dropna()
+print(target)
 # # Normalisation des caractéristiques
-from sklearn.preprocessing import MinMaxScaler
-scaler = MinMaxScaler()
-scaled_features = scaler.fit_transform(features)
+# from sklearn.preprocessing import MinMaxScaler
+# scaler = MinMaxScaler()
+# scaled_features = scaler.fit_transform(features)
 
 
 from sklearn.model_selection import train_test_split
@@ -57,7 +63,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error
 
 # # Division des données en ensembles d'entraînement et de test
-X_train, X_test, y_train, y_test = train_test_split(scaled_features, target, test_size=0.2, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.2, random_state=42)
 
 # # Entraînement du modèle
 model = LinearRegression()
@@ -70,5 +76,5 @@ print(f'Mean Squared Error: {mse}')
 
 
 # # Sauvegarde du modèle et du scaler
-# joblib.dump(model, 'weather_model.pkl')
+joblib.dump(model, 'weather_model.pkl')
 # joblib.dump(scaler, 'scaler.pkl')
