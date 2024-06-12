@@ -5,7 +5,8 @@ from flask_cors import CORS
 from flask_mail import Mail
 from flask_mail import Message
 import logging
-
+import numpy as np
+import joblib 
 
 
 app = Flask(__name__)
@@ -170,6 +171,19 @@ def send_email():
     except Exception as e:
         logging.error("Error sending email", exc_info=True)
         return jsonify({"error": str(e)}), 500
+
+
+# Charger le modèle et le scaler
+model = joblib.load('weather_model.pkl')
+scaler = joblib.load('scaler.pkl')
+#route prédiction 
+@app.route('/predict', methods=['POST'])
+def predict():
+    data = request.json
+    input_data = np.array([data['maxtemp_c'], data['mintemp_c'], data['avgtemp_c'], data['maxwind_kph'], data['totalprecip_mm'], data['avgvis_km'], data['avghumidity']]).reshape(1, -1)
+    input_data = scaler.transform(input_data)
+    prediction = model.predict(input_data)
+    return jsonify({'predicted_maxtemp_c': prediction[0]})
 
 if __name__ == '__main__':
     app.run(debug=True)
